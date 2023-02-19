@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
@@ -15,18 +14,9 @@ from app.schemas import (
     DeleteItemResponse,
     RegisterUserResponse,
 )
-from app import settings
 from main import app
 
 JSON = Dict[str, Any]
-
-
-@pytest.fixture
-async def database():
-    db = Database(os.environ['DB_URI'])
-    await db.connect()
-    yield db
-    await db.disconnect()
 
 
 @pytest.mark.parametrize(
