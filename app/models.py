@@ -1,5 +1,5 @@
-import uuid
 import hashlib
+import uuid
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, List, Mapping, Optional
@@ -8,7 +8,7 @@ import sqlalchemy
 from sqlalchemy import ForeignKey, and_, select
 from sqlalchemy.ext.declarative import declarative_base
 
-from .settings import database, metadata, TOKEN_TTL
+from app import settings
 from .schemas import ItemSchema
 
 Base = declarative_base()
@@ -25,7 +25,7 @@ class User(Base):
 
 users = sqlalchemy.Table(
     'users',
-    metadata,
+    settings.metadata,
     sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, index=True),
     sqlalchemy.Column('login', sqlalchemy.String, nullable=False, unique=True),
     sqlalchemy.Column('password', sqlalchemy.String, nullable=False),
@@ -38,24 +38,24 @@ class UserModel:
     @classmethod
     async def create(cls, login: str, password: str) -> int:
         insert_user_query = users.insert().values(login=login, password=password)
-        user_id = await database.execute(insert_user_query)
+        user_id = await settings.database.execute(insert_user_query)
         return user_id
 
     @classmethod
     async def is_registered(cls, login: str) -> bool:
         select_user_query = users.select().where(users.c.login == login)
-        user = await database.fetch_one(select_user_query)
+        user = await settings.database.fetch_one(select_user_query)
         return bool(user)
 
     @classmethod
     async def authorize(cls, login: str, password: str) -> Optional[str]:
         token = hashlib.md5(uuid.uuid4().hex.encode()).hexdigest()
-        token_expired_at = datetime.now() + timedelta(seconds=TOKEN_TTL)
+        token_expired_at = datetime.now() + timedelta(seconds=settings.TOKEN_TTL)
 
         select_user_query = users.select().where(
             and_(users.c.login == login, users.c.password == password)
         )
-        user = await database.execute(select_user_query)
+        user = await settings.database.execute(select_user_query)
         if user:
 
             set_token_query = (
@@ -63,7 +63,7 @@ class UserModel:
                 .where(and_(users.c.login == login, users.c.password == password))
                 .values(token=token, token_expired_at=token_expired_at)
             )
-            await database.execute(set_token_query)
+            await settings.database.execute(set_token_query)
             return token
 
     @classmethod
@@ -71,13 +71,13 @@ class UserModel:
         select_user_query = users.select().where(
             and_(users.c.token == token, datetime.now() < users.c.token_expired_at)
         )
-        user = await database.fetch_one(select_user_query)
+        user = await settings.database.fetch_one(select_user_query)
         return user
 
     @classmethod
     async def get_by_login(cls, login: str) -> Optional[Mapping[str, Any]]:
         select_user_query = users.select().where(users.c.login == login)
-        user = await database.fetch_one(select_user_query)
+        user = await settings.database.fetch_one(select_user_query)
         return user
 
 
@@ -90,7 +90,7 @@ class Item(Base):
 
 items = sqlalchemy.Table(
     'items',
-    metadata,
+    settings.metadata,
     sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, index=True),
     sqlalchemy.Column('user_id', sqlalchemy.Integer, ForeignKey('users.id'), nullable=False),
     sqlalchemy.Column('name', sqlalchemy.String, nullable=False),
@@ -108,7 +108,7 @@ class Sending(Base):
 
 sendings = sqlalchemy.Table(
     'sendings',
-    metadata,
+    settings.metadata,
     sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, index=True),
     sqlalchemy.Column('item_id', sqlalchemy.Integer, ForeignKey('items.id'), nullable=False),
     sqlalchemy.Column('from_user_id', sqlalchemy.Integer, ForeignKey('users.id'),nullable=False),
@@ -121,27 +121,27 @@ class ItemModel:
     @classmethod
     async def create(cls, name: str, user_id: int) -> int:
         insert_item_query = items.insert().values(name=name, user_id=user_id)
-        item_id = await database.execute(insert_item_query)
+        item_id = await settings.database.execute(insert_item_query)
         return item_id
 
     @classmethod
     async def get(cls, item_id: int) -> Optional[Mapping[str, Any]]:
         select_item_query = items.select().where(items.c.id == item_id)
-        item = await database.fetch_one(select_item_query)
+        item = await settings.database.fetch_one(select_item_query)
         return item
 
     @classmethod
-    @database.transaction()
+    @settings.database.transaction()
     async def delete(cls, item_id: int) -> Optional[int]:
         delete_item_query = (
             items.delete().where(items.c.id == item_id).returning(items.c.id)
         )
-        deleted_item_id = await database.execute(delete_item_query)
+        deleted_item_id = await settings.database.execute(delete_item_query)
 
         delete_item_sending_query = (
             sendings.delete().where(items.c.id == item_id).returning(items.c.id)
         )
-        await database.execute(delete_item_sending_query)
+        await settings.database.execute(delete_item_sending_query)
 
         return deleted_item_id
 
@@ -152,7 +152,7 @@ class ItemModel:
             .where(items.c.user_id == user_id)
             .order_by('id')
         )
-        items_ = await database.fetch_all(list_items_query)
+        items_ = await settings.database.fetch_all(list_items_query)
         return list(Item(**item) for item in items_)
 
     @classmethod
@@ -170,7 +170,7 @@ class ItemModel:
             )
             .values(user_id=to_user_id)
         )
-        transferred_item_id = await database.execute(update_items_query)
+        transferred_item_id = await settings.database.execute(update_items_query)
         return transferred_item_id
 
 
@@ -198,7 +198,7 @@ class SendingModel:
 
     @classmethod
     async def complete_sending(cls, item_token: str) -> SendingStatus:
-        transaction = await database.transaction()
+        transaction = await settings.database.transaction()
 
         sending = await cls.get(item_token)
         if not sending:
@@ -232,7 +232,7 @@ class SendingModel:
                 sendings.c.item_id == item_id,
             )
         )
-        item_token = await database.fetch_val(select_url_query)
+        item_token = await settings.database.fetch_val(select_url_query)
         return item_token
 
     @classmethod
@@ -249,7 +249,7 @@ class SendingModel:
             )
             .returning(sendings.c.item_token)
         )
-        item_token = await database.execute(insert_url_query)
+        item_token = await settings.database.execute(insert_url_query)
         return item_token
 
     @classmethod
@@ -263,7 +263,7 @@ class SendingModel:
             )
         )
 
-        sending = await database.fetch_one(select_sending_query)
+        sending = await settings.database.fetch_one(select_sending_query)
         return sending
 
     @classmethod
@@ -275,5 +275,5 @@ class SendingModel:
             .where(sendings.c.item_id == item_id)
         )
 
-        deleted_sending_id = await database.execute(delete_sending_query)
+        deleted_sending_id = await settings.database.execute(delete_sending_query)
         return deleted_sending_id

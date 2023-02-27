@@ -8,16 +8,17 @@ from alembic.config import Config
 from databases import Database
 
 from alembic import command
+from app import settings
 
 
 @pytest.fixture(scope='session', autouse=True)
-def test_db():
+def test_db_uri() -> str:
     db_uri = os.getenv('DB_URI')
     test_db_name = 'test'
     db_parsed_uri = parse.urlparse(db_uri)._asdict()
     db_parsed_uri['path'] = f'/{test_db_name}'
     test_db_parsed_uri = parse.ParseResult(**db_parsed_uri)
-    test_db_uri = parse.urlunparse(test_db_parsed_uri)
+    test_db_uri_ = parse.urlunparse(test_db_parsed_uri)
 
     connection = psycopg2.connect(db_uri)
     connection.autocommit = True
@@ -27,10 +28,10 @@ def test_db():
     print(f'Test database "{test_db_name}" has been created')
 
     alembic_cfg = Config(Path(os.getcwd()) / 'alembic.ini')
-    os.environ['DB_URI'] = test_db_uri
+    os.environ['DB_URI'] = test_db_uri_
     command.upgrade(alembic_cfg, 'head')
     try:
-        yield test_db_uri
+        yield test_db_uri_
     finally:
         cursor.execute(f'DROP database {test_db_name}')
         connection.close()
@@ -39,8 +40,13 @@ def test_db():
 
 
 @pytest.fixture
-async def database(test_db):
-    db = Database(test_db)
-    await db.connect()
-    yield db
-    await db.disconnect()
+async def database(test_db_uri):
+    db = settings.database
+    test_db = Database(test_db_uri, force_rollback=True)
+    settings.database = test_db
+    await test_db.connect()
+    try:
+        yield test_db
+    finally:
+        await test_db.disconnect()
+        settings.database = db
