@@ -1,12 +1,11 @@
 import hashlib
+import sqlalchemy
 import uuid
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, List, Mapping, Optional
-
-import sqlalchemy
 from sqlalchemy import ForeignKey, and_, select
 from sqlalchemy.ext.declarative import declarative_base
+from typing import Any, List, Mapping, Optional
 
 from app import settings
 from .schemas import ItemSchema
@@ -35,6 +34,9 @@ users = sqlalchemy.Table(
 
 
 class UserModel:
+    def __init__(self):
+        pass
+
     @classmethod
     async def create(cls, login: str, password: str) -> int:
         insert_user_query = users.insert().values(login=login, password=password)
@@ -118,6 +120,9 @@ sendings = sqlalchemy.Table(
 
 
 class ItemModel:
+    def __init__(self):
+        pass
+
     @classmethod
     async def create(cls, name: str, user_id: int) -> int:
         insert_item_query = items.insert().values(name=name, user_id=user_id)
@@ -153,7 +158,7 @@ class ItemModel:
             .order_by('id')
         )
         items_ = await settings.database.fetch_all(list_items_query)
-        return list(Item(**item) for item in items_)
+        return [Item(**item) for item in items_]
 
     @classmethod
     async def transfer(
@@ -181,6 +186,9 @@ class SendingStatus(Enum):
 
 
 class SendingModel:
+    def __init__(self):
+        pass
+
     @classmethod
     async def initiate_sending(
         cls, from_user_id: int, to_user_id: int, item_id: int

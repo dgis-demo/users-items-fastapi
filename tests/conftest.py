@@ -1,11 +1,10 @@
 import os
-from pathlib import Path
-from urllib import parse
-
 import psycopg2
 import pytest
 from alembic.config import Config
 from databases import Database
+from pathlib import Path
+from urllib import parse
 
 from alembic import command
 from app import settings

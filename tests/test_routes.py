@@ -1,12 +1,11 @@
-from datetime import datetime, timedelta
-from typing import Any, Dict, List
-
 import pytest
 from async_asgi_testclient import TestClient
 from databases import Database
+from datetime import datetime, timedelta
 from sqlalchemy import and_, select
 from starlette import status
 from starlette.responses import JSONResponse
+from typing import Any, Dict, List
 
 from app.models import items, sendings, users
 from app.schemas import (
@@ -572,7 +571,7 @@ async def test_get_item(
 
         async with TestClient(app) as client:
             response = await client.get(
-                f'/get',
+                '/get',
                 query_string=get_item_request,
             )
 

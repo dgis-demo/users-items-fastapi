@@ -1,13 +1,11 @@
-from typing import List
-
 from fastapi import APIRouter, HTTPException
 from starlette import status
 from starlette.responses import JSONResponse
+from typing import List
 
-from .settings import HOST, PORT
-
-from .models import ItemModel, SendingModel, SendingStatus, UserModel
 import app.schemas as sc
+from .models import ItemModel, SendingModel, SendingStatus, UserModel
+from .settings import HOST, PORT
 
 router = APIRouter()
 
