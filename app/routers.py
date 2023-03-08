@@ -161,7 +161,7 @@ async def send_item(request: sc.SendItemRequest) -> sc.SendItemResponse:
 
 
 @router.get(
-    '/get/{item_token}/{recipient_token}',
+    '/get',
     status_code=status.HTTP_200_OK,
     description='''
     Reassign an item to an authorized user using confirmation URL.

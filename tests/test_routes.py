@@ -572,7 +572,7 @@ async def test_get_item(
 
         async with TestClient(app) as client:
             response = await client.get(
-                f'/get/{get_item_request["item_token"]}/{get_item_request["recipient_token"]}',
+                f'/get',
                 query_string=get_item_request,
             )
 
