@@ -197,7 +197,7 @@ async def test_create_item(
             await database.execute(users.insert().values(**user))
 
         async with TestClient(app) as client:
-            response = await client.post('/items/new', json=create_item_request)
+            response = await client.post('/items', json=create_item_request)
 
         assert response.status_code == expected_response.status_code
         assert response.content == expected_response.body

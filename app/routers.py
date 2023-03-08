@@ -51,7 +51,7 @@ async def login_user(request: sc.AuthorizeUserRequest) -> sc.AuthorizeUserRespon
 
 
 @router.post(
-    '/items/new',
+    '/items',
     status_code=status.HTTP_201_CREATED,
     response_model=sc.CreateItemResponse,
     description='''
