@@ -134,7 +134,7 @@ async def test_login_user(
 
 
 @pytest.mark.parametrize(
-    'user, create_item_request, expected_response',
+    'user, create_item_request, create_item_headers, expected_response',
     [
         (
             {
@@ -144,7 +144,8 @@ async def test_login_user(
                 'token': 'ccc06989e67e552227cbb80f952d1ac8',
                 'token_expired_at': datetime.now() + timedelta(hours=1),
             },
-            {'name': 'name', 'token': 'ccc06989e67e552227cbb80f952d1ac8'},
+            {'name': 'name'},
+            {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             JSONResponse(
                 status_code=status.HTTP_201_CREATED,
                 content=CreateItemResponse(
@@ -161,7 +162,8 @@ async def test_login_user(
                 'token': 'ccc06989e67e552227cbb80f952d1ac8',
                 'token_expired_at': datetime.now() - timedelta(hours=1),
             },
-            {'name': 'name', 'token': 'ccc06989e67e552227cbb80f952d1ac8'},
+            {'name': 'name'},
+            {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 content={'detail': 'Token has not been authorized'}
@@ -176,7 +178,8 @@ async def test_login_user(
                 'token': None,
                 'token_expired_at': None,
             },
-            {'name': 'name', 'token': 'ccc06989e67e552227cbb80f952d1ac8'},
+            {'name': 'name'},
+            {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 content={'detail': 'Token has not been authorized'}
@@ -188,6 +191,7 @@ async def test_login_user(
 async def test_create_item(
     user: JSON,
     create_item_request: JSON,
+    create_item_headers: JSON,
     expected_response: JSONResponse,
     database: Database,
 ) -> None:
@@ -196,7 +200,11 @@ async def test_create_item(
             await database.execute(users.insert().values(**user))
 
         async with TestClient(app) as client:
-            response = await client.post('/items', json=create_item_request)
+            response = await client.post(
+                '/items',
+                json=create_item_request,
+                headers=create_item_headers,
+            )
 
         assert response.status_code == expected_response.status_code
         assert response.content == expected_response.body
@@ -206,7 +214,7 @@ async def test_create_item(
 
 
 @pytest.mark.parametrize(
-    'user, item, delete_item_request, expected_response',
+    'user, item, delete_item_request, delete_item_headers, expected_response',
     [
         (
             {
@@ -217,7 +225,8 @@ async def test_create_item(
                 'token_expired_at': datetime.now() + timedelta(hours=1),
             },
             {'id': 1, 'user_id': 1, 'name': 'item'},
-            {'id': 1, 'token': 'ccc06989e67e552227cbb80f952d1ac8'},
+            {'id': 1},
+            {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             JSONResponse(
                 status_code=status.HTTP_200_OK,
                 content=DeleteItemResponse(message='Item has been removed').dict()
@@ -233,7 +242,8 @@ async def test_create_item(
                 'token_expired_at': datetime.now() + timedelta(hours=1),
             },
             None,
-            {'id': 1, 'token': 'ccc06989e67e552227cbb80f952d1ac8'},
+            {'id': 1},
+            {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             JSONResponse(
                 status_code=status.HTTP_204_NO_CONTENT,
                 content=DeleteItemResponse(message='Item has not been found').dict()
@@ -249,7 +259,8 @@ async def test_create_item(
                 'token_expired_at': None,
             },
             None,
-            {'id': 1, 'token': 'ccc06989e67e552227cbb80f952d1ac8'},
+            {'id': 1},
+            {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 content={'detail': 'Token has not been authorized'}
@@ -262,6 +273,7 @@ async def test_delete_item(
     user: JSON,
     item: JSON,
     delete_item_request: JSON,
+    delete_item_headers: JSON,
     expected_response: JSONResponse,
     database: Database,
 ) -> None:
@@ -274,7 +286,9 @@ async def test_delete_item(
 
         async with TestClient(app) as client:
             response = await client.delete(
-                f'/items/{delete_item_request["id"]}', json=delete_item_request
+                f'/items/{delete_item_request["id"]}',
+                json=delete_item_request,
+                headers=delete_item_headers,
             )
 
         assert response.status_code == expected_response.status_code
@@ -285,7 +299,7 @@ async def test_delete_item(
 
 
 @pytest.mark.parametrize(
-    'user, items_, list_items_request, expected_response',
+    'user, items_, list_items_headers, expected_response',
     [
         (
             {
@@ -300,7 +314,7 @@ async def test_delete_item(
                 {'id': 1, 'user_id': 1, 'name': 'item1'},
                 {'id': 2, 'user_id': 1, 'name': 'item2'},
             ],
-            {'token': 'ccc06989e67e552227cbb80f952d1ac8'},
+            {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             JSONResponse(
                 status_code=status.HTTP_200_OK,
                 content=[
@@ -320,7 +334,7 @@ async def test_delete_item(
                 'token_expired_at': datetime.now() + timedelta(hours=1),
             },
             None,
-            {'token': 'ccc06989e67e552227cbb80f952d1ac8'},
+            {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             JSONResponse(
                 status_code=status.HTTP_200_OK,
                 content=[],
@@ -332,7 +346,7 @@ async def test_delete_item(
 async def test_list_items(
     user: JSON,
     items_: List[JSON],
-    list_items_request: JSON,
+    list_items_headers: JSON,
     expected_response: JSONResponse,
     database: Database,
 ) -> None:
@@ -344,7 +358,7 @@ async def test_list_items(
             await database.execute_many(items.insert(), values=items_)
 
         async with TestClient(app) as client:
-            response = await client.get('/items', query_string=list_items_request)
+            response = await client.get('/items', headers=list_items_headers)
 
         assert response.status_code == expected_response.status_code
         assert response.content == expected_response.body
@@ -354,7 +368,7 @@ async def test_list_items(
 
 
 @pytest.mark.parametrize(
-    'sender, sender_items, recipient, send_item_request, expected_status',
+    'sender, sender_items, recipient, send_item_request, send_item_headers, expected_status',
     [
         (
             {
@@ -376,7 +390,8 @@ async def test_list_items(
                 'token': None,
                 'token_expired_at': None,
             },
-            {'id': 3, 'token': 'ccc06989e67e552227cbb80f952d1ac8', 'recipient': 'user2'},
+            {'id': 3, 'recipient': 'user2'},
+            {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             status.HTTP_201_CREATED,
         ),
 
@@ -395,9 +410,10 @@ async def test_list_items(
             ],
             None,
             {
-                'id': 3, 'token': 'ccc06989e67e552227cbb80f952d1ac8',
-                'recipient': 'user1'
+                'id': 3,
+                'recipient': 'user1',
             },
+            {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             status.HTTP_400_BAD_REQUEST,
         ),
 
@@ -421,7 +437,8 @@ async def test_list_items(
                 'token': None,
                 'token_expired_at': None,
             },
-            {'id': 99, 'token': 'ccc06989e67e552227cbb80f952d1ac8', 'recipient': 'user2'},
+            {'id': 99, 'recipient': 'user2'},
+            {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             status.HTTP_404_NOT_FOUND,
         ),
 
@@ -439,7 +456,8 @@ async def test_list_items(
                 {'id': 2, 'user_id': 1, 'name': 'item2'},
             ],
             None,
-            {'id': 3, 'token': 'ccc06989e67e552227cbb80f952d1ac8', 'recipient': 'user2'},
+            {'id': 3, 'recipient': 'user2'},
+            {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             status.HTTP_404_NOT_FOUND,
         ),
     ]
@@ -450,6 +468,7 @@ async def test_send_item(
     sender_items: List[JSON],
     recipient: JSON,
     send_item_request: JSON,
+    send_item_headers: JSON,
     expected_status: int,
     database: Database,
 ) -> None:
@@ -462,7 +481,11 @@ async def test_send_item(
             await database.execute_many(items.insert(), values=sender_items)
 
         async with TestClient(app) as client:
-            response = await client.post('/send', json=send_item_request)
+            response = await client.post(
+                '/send',
+                json=send_item_request,
+                headers=send_item_headers,
+            )
 
         assert response.status_code == expected_status
 

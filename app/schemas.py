@@ -33,7 +33,6 @@ class AuthorizeUserResponse(BaseModel):
 
 class CreateItemRequest(BaseModel):
     name: str
-    token: str
 
     class Config:
         orm_mode = True
@@ -50,7 +49,6 @@ class CreateItemResponse(BaseModel):
 
 class DeleteItemRequest(BaseModel):
     id: int
-    token: str
 
     class Config:
         orm_mode = True
@@ -73,7 +71,6 @@ class ItemSchema(BaseModel):
 
 class SendItemRequest(BaseModel):
     id: int
-    token: str
     recipient: str
 
     class Config:

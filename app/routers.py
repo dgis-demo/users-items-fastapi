@@ -1,4 +1,6 @@
 from fastapi import APIRouter, HTTPException
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette import status
 from starlette.responses import JSONResponse
 from typing import List
@@ -8,6 +10,8 @@ from .models import ItemModel, SendingModel, SendingStatus, UserModel
 from .settings import HOST, PORT
 
 router = APIRouter()
+
+bearer_scheme = HTTPBearer()
 
 
 @router.post(
@@ -56,8 +60,11 @@ async def login_user(request: sc.AuthorizeUserRequest) -> sc.AuthorizeUserRespon
     Create an item for an authorized user.
     '''
 )
-async def create_item(request: sc.CreateItemRequest) -> sc.CreateItemResponse:
-    user = await UserModel.get_authorized(request.token)
+async def create_item(
+        request: sc.CreateItemRequest,
+        token: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> sc.CreateItemResponse:
+    user = await UserModel.get_authorized(token.credentials)
     if user:
         item_id = await ItemModel.create(name=request.name, user_id=user['id'])
         return sc.CreateItemResponse(id=item_id, name=request.name, message='Item has been created')
@@ -75,8 +82,11 @@ async def create_item(request: sc.CreateItemRequest) -> sc.CreateItemResponse:
     Remove a particular item.
     '''
 )
-async def delete_item(request: sc.DeleteItemRequest) -> JSONResponse:
-    user = await UserModel.get_authorized(request.token)
+async def delete_item(
+        request: sc.DeleteItemRequest,
+        token: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> JSONResponse:
+    user = await UserModel.get_authorized(token.credentials)
     if user:
         item_id = await ItemModel.delete(request.id)
         if item_id:
@@ -104,8 +114,10 @@ async def delete_item(request: sc.DeleteItemRequest) -> JSONResponse:
     Return a list of items for an authorized user.
     '''
 )
-async def list_items(token: str) -> List[sc.ItemSchema]:
-    user = await UserModel.get_authorized(token)
+async def list_items(
+        token: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> List[sc.ItemSchema]:
+    user = await UserModel.get_authorized(token.credentials)
     if user:
         items = await ItemModel.list(user_id=user['id'])
         return items
@@ -124,8 +136,11 @@ async def list_items(token: str) -> List[sc.ItemSchema]:
     Send an item, return confirmation URL.
     ''',
 )
-async def send_item(request: sc.SendItemRequest) -> sc.SendItemResponse:
-    sender = await UserModel.get_authorized(request.token)
+async def send_item(
+        request: sc.SendItemRequest,
+        token: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> sc.SendItemResponse:
+    sender = await UserModel.get_authorized(token.credentials)
     if not sender:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
