@@ -77,7 +77,7 @@ async def create_item(
 
 @router.delete(
     '/items/{id}',
-    response_model=sc.DeleteItemResponse,
+    status_code=status.HTTP_204_NO_CONTENT,
     description='''
     Remove a particular item.
     '''
@@ -91,12 +91,11 @@ async def delete_item(
         item_id = await ItemModel.delete(request.id)
         if item_id:
             return JSONResponse(
-                status_code=status.HTTP_200_OK,
-                content=sc.DeleteItemResponse(message='Item has been removed').dict(),
+                status_code=status.HTTP_204_NO_CONTENT,
             )
 
         return JSONResponse(
-            status_code=status.HTTP_204_NO_CONTENT,
+            status_code=status.HTTP_404_NOT_FOUND,
             content=sc.DeleteItemResponse(message='Item has not been found').dict(),
         )
 

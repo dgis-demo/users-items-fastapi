@@ -228,8 +228,7 @@ async def test_create_item(
             {'id': 1},
             {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             JSONResponse(
-                status_code=status.HTTP_200_OK,
-                content=DeleteItemResponse(message='Item has been removed').dict()
+                status_code=status.HTTP_204_NO_CONTENT,
             )
         ),
 
@@ -245,7 +244,7 @@ async def test_create_item(
             {'id': 1},
             {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             JSONResponse(
-                status_code=status.HTTP_204_NO_CONTENT,
+                status_code=status.HTTP_404_NOT_FOUND,
                 content=DeleteItemResponse(message='Item has not been found').dict()
             )
         ),
