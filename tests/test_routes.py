@@ -491,7 +491,8 @@ async def test_send_item(
 
 
 @pytest.mark.parametrize(
-    'sender, sender_items, recipient, item_sending, get_item_request, expected_status',
+    'sender, sender_items, recipient, item_sending, '
+    'confirm_sending_request, confirm_sending_headers, expected_status',
     [
         (
             {
@@ -520,11 +521,8 @@ async def test_send_item(
                 'to_user_id': 2,
                 'item_token': 'a185a9ad7b1b3d166702ba97b83e9e17',
             },
-
-            {
-                'recipient_token': 'ccc06989e67e552227cbb80f952d1ac8',
-                'item_token': 'a185a9ad7b1b3d166702ba97b83e9e17',
-            },
+            {'item_token': 'a185a9ad7b1b3d166702ba97b83e9e17'},
+            {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             status.HTTP_200_OK,
         ),
 
@@ -533,10 +531,8 @@ async def test_send_item(
             None,
             None,
             None,
-            {
-                'recipient_token': 'ccc06989e67e552227cbb80f952d1ac8',
-                'item_token': 'a185a9ad7b1b3d166702ba97b83e9e17',
-            },
+            {'item_token': 'a185a9ad7b1b3d166702ba97b83e9e17'},
+            {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             status.HTTP_401_UNAUTHORIZED,
         ),
 
@@ -561,21 +557,20 @@ async def test_send_item(
                 'token_expired_at': datetime.now() + timedelta(hours=1),
             },
             None,
-            {
-                'recipient_token': 'ccc06989e67e552227cbb80f952d1ac8',
-                'item_token': 'a185a9ad7b1b3d166702ba97b83e9e17',
-            },
+            {'item_token': 'a185a9ad7b1b3d166702ba97b83e9e17'},
+            {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             status.HTTP_404_NOT_FOUND,
         ),
     ]
 )
 @pytest.mark.asyncio
-async def test_get_item(
+async def test_confirm_sending(
     sender: JSON,
     sender_items: List[JSON],
     recipient: JSON,
     item_sending: JSON,
-    get_item_request: JSON,
+    confirm_sending_request: JSON,
+    confirm_sending_headers: JSON,
     expected_status: int,
     database: Database,
 ) -> None:
@@ -591,8 +586,9 @@ async def test_get_item(
 
         async with TestClient(app) as client:
             response = await client.get(
-                '/get',
-                query_string=get_item_request,
+                '/confirm',
+                query_string=confirm_sending_request,
+                headers=confirm_sending_headers,
             )
 
         assert response.status_code == expected_status

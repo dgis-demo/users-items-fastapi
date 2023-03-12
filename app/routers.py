@@ -173,18 +173,34 @@ async def send_item(
 
 
 @router.get(
-    '/get',
+    '/confirm',
     status_code=status.HTTP_200_OK,
     description='''
     Reassign an item to an authorized user using confirmation URL.
     ''',
 )
-async def get_item(item_token: str, recipient_token: str) -> JSONResponse:
-    user = await UserModel.get_authorized(recipient_token)
+async def confirm_sending(
+        item_token: str,
+        token: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> JSONResponse:
+    user = await UserModel.get_authorized(token.credentials)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Token has not been authorized',
+        )
+
+    sending = await SendingModel.get(item_token)
+    if not sending:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Sending has not been found',
+        )
+
+    if user['id'] != sending['to_user_id']:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='User has not been authorized for the confirmation',
         )
 
     sending_status = await SendingModel.complete_sending(item_token=item_token)
@@ -198,6 +214,6 @@ async def get_item(item_token: str, recipient_token: str) -> JSONResponse:
         return JSONResponse(content={'message': 'Item has been received'})
 
     raise HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail='Internal server error',
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail='Bad request',
     )
