@@ -145,7 +145,7 @@ async def send_item(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Token has not been authorized',
         )
-    if sender['login'] == request.recipient:
+    if sender['login'] == request.recipient_login:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Cannot send an item to yourself',
@@ -158,7 +158,7 @@ async def send_item(
             detail='Item has not been found',
         )
 
-    recipient = await UserModel.get_by_login(request.recipient)
+    recipient = await UserModel.get_by_login(request.recipient_login)
     if not recipient:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -168,7 +168,7 @@ async def send_item(
     item_token = await SendingModel.initiate_sending(
         from_user_id=sender['id'], to_user_id=recipient['id'], item_id=request.id
     )
-    url = f'http://{HOST}:{PORT}/get/{item_token}/{recipient["token"]}'
+    url = f'http://{HOST}:{PORT}/get/?item_token={item_token}'
     return sc.SendItemResponse(confirmation_url=url)
 
 

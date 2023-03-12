@@ -70,7 +70,7 @@ class ItemSchema(BaseModel):
 
 class SendItemRequest(BaseModel):
     id: int
-    recipient: str
+    recipient_login: str
 
     class Config:
         orm_mode = True
