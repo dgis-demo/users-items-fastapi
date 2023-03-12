@@ -67,7 +67,7 @@ async def create_item(
     user = await UserModel.get_authorized(token.credentials)
     if user:
         item_id = await ItemModel.create(name=request.name, user_id=user['id'])
-        return sc.CreateItemResponse(id=item_id, name=request.name, message='Item has been created')
+        return sc.CreateItemResponse(id=item_id, name=request.name)
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

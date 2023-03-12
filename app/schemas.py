@@ -41,7 +41,6 @@ class CreateItemRequest(BaseModel):
 class CreateItemResponse(BaseModel):
     id: int
     name: str
-    message: str
 
     class Config:
         orm_mode = True

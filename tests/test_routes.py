@@ -148,9 +148,7 @@ async def test_login_user(
             {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             JSONResponse(
                 status_code=status.HTTP_201_CREATED,
-                content=CreateItemResponse(
-                    id=1, name='name', message='Item has been created'
-                ).dict()
+                content=CreateItemResponse(id=1, name='name').dict()
             )
         ),
 
