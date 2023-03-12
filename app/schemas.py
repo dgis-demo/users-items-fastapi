@@ -10,7 +10,7 @@ class RegisterUserRequest(BaseModel):
 
 
 class RegisterUserResponse(BaseModel):
-    message: str
+    detail: str
 
     class Config:
         orm_mode = True
@@ -48,13 +48,6 @@ class CreateItemResponse(BaseModel):
 
 class DeleteItemRequest(BaseModel):
     id: int
-
-    class Config:
-        orm_mode = True
-
-
-class DeleteItemResponse(BaseModel):
-    message: str
 
     class Config:
         orm_mode = True

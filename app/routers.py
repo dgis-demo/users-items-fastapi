@@ -29,7 +29,7 @@ async def register_user(request: sc.RegisterUserRequest) -> sc.RegisterUserRespo
 
         registration_succeeded = await UserModel.is_registered(request.login)
         if registration_succeeded:
-            return sc.RegisterUserResponse(message='User has been registered')
+            return sc.RegisterUserResponse(detail='User has been registered')
 
     raise HTTPException(
         status_code=status.HTTP_409_CONFLICT, detail='User already exists'
@@ -94,9 +94,9 @@ async def delete_item(
                 status_code=status.HTTP_204_NO_CONTENT,
             )
 
-        return JSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=sc.DeleteItemResponse(message='Item has not been found').dict(),
+            detail='Item has not been found',
         )
 
     raise HTTPException(
@@ -211,7 +211,7 @@ async def confirm_sending(
         )
 
     if sending_status == sending_status.COMPLETED:
-        return JSONResponse(content={'message': 'Item has been received'})
+        return JSONResponse(content={'detail': 'Item has been received'})
 
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,

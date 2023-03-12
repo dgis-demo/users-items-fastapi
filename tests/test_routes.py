@@ -10,7 +10,6 @@ from typing import Any, Dict, List
 from app.models import items, sendings, users
 from app.schemas import (
     CreateItemResponse,
-    DeleteItemResponse,
     RegisterUserResponse,
 )
 from main import app
@@ -42,7 +41,7 @@ JSON = Dict[str, Any]
             JSONResponse(
                 status_code=status.HTTP_201_CREATED,
                 content=RegisterUserResponse(
-                    message='User has been registered'
+                    detail='User has been registered'
                 ).dict(),
             )
         ),
@@ -243,7 +242,7 @@ async def test_create_item(
             {'Authorization': 'Bearer ccc06989e67e552227cbb80f952d1ac8'},
             JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
-                content=DeleteItemResponse(message='Item has not been found').dict()
+                content={'detail': 'Item has not been found'},
             )
         ),
 
